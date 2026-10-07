@@ -340,6 +340,20 @@ docker compose -f docker-compose.app.yml run --rm --no-deps -e BaseDatosNombre=s
 
 Si la base de pruebas ya existe, salta el comando `createdb`. El último crea
 `artifacts/fase2/coverage.xml`; SonarQube ya no lee el `coverage.xml` de la raíz.
+Desde la raíz del repositorio, genera también la cobertura del frontend:
+
+```powershell
+cd src\frontend
+
+npm ci
+
+cd ..\..
+
+node scripts\phase2_frontend_coverage.mjs
+```
+
+Esto crea `artifacts/fase2/frontend-lcov.info`; SonarQube importa ambos
+reportes de cobertura.
 Usa siempre `sistema_mensajeria_segura_test` para estas pruebas porque los tests
 limpian sus tablas. Comprueba que el archivo se haya creado:
 
@@ -376,6 +390,8 @@ generaste en el paso 3.
 
 ```powershell
 if (-not (Test-Path artifacts\fase2\coverage.xml)) { throw "Falta la cobertura de Fase 2; ejecuta el paso 4." }
+
+if (-not (Test-Path artifacts\fase2\frontend-lcov.info)) { throw "Falta la cobertura del frontend; ejecuta el paso 4." }
 
 if (-not (Test-Path artifacts\fase2\semgrep.sarif)) { throw "Falta semgrep.sarif de Fase 2; ejecuta el paso 5." }
 
