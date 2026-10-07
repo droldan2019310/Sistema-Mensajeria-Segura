@@ -44,7 +44,7 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def agregarCabecerasSeguridad(request, call_next):
+async def agregar_cabeceras_seguridad(request, call_next):
     respuesta = await call_next(request)
     respuesta.headers["X-Content-Type-Options"] = "nosniff"
     return respuesta
@@ -76,7 +76,10 @@ def saludBaseDatos():
         sesion.close()
 
 
-@app.get("/salud/externa")
+@app.get(
+    "/salud/externa",
+    responses={503: {"description": "Servicio externo no disponible"}},
+)
 def saludExterna():
     try:
         respuesta = httpx.get(URL_SALUD_EXTERNA, timeout=5.0)
