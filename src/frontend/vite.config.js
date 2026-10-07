@@ -68,7 +68,8 @@ export default defineConfig({
     cors: false,
     headers: {
       "X-Content-Type-Options": "nosniff",
-      "X-Frame-Options": "DENY"
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
     },
     proxy: {
       "/auth": "http://localhost:17841",

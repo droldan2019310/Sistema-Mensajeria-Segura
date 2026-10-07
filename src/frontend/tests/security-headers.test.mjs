@@ -2,9 +2,51 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
 import { createServer } from "vite";
+import { fileURLToPath } from "node:url";
+import config from "../vite.config.js";
+
+test("La configuración mantiene CORS y cabeceras de seguridad", () => {
+  assert.equal(config.server.cors, false);
+  assert.equal(config.server.headers["X-Content-Type-Options"], "nosniff");
+  assert.equal(config.server.headers["X-Frame-Options"], "DENY");
+  assert.ok(config.server.headers["Content-Security-Policy"].includes("default-src 'none'"));
+  assert.ok(config.server.headers["Content-Security-Policy"].includes("form-action 'none'"));
+});
+
+test("El middleware protege HTML y deja pasar otras rutas", async () => {
+  const plugin = config.plugins.find((item) => item.name === "csp-con-nonce");
+  let middleware;
+  plugin.configureServer({
+    middlewares: { use: (handler) => { middleware = handler; } },
+    transformIndexHtml: async (_ruta, html) => html
+  });
+
+  const headers = new Map();
+  let body;
+  const response = {
+    setHeader: (name, value) => headers.set(name.toLowerCase(), value),
+    end: (value) => { body = value; }
+  };
+  await middleware({ method: "GET", url: "/?x=1" }, response, () => {
+    throw new Error("La página principal no debe omitir las cabeceras");
+  });
+  const nonce = body.match(/nonce="([^"]+)"/)?.[1];
+  assert.ok(nonce);
+  assert.equal(headers.get("x-frame-options"), "DENY");
+  assert.equal(headers.get("x-content-type-options"), "nosniff");
+  assert.ok(headers.get("content-security-policy").includes(`'nonce-${nonce}'`));
+
+  let pasó = false;
+  await middleware({ method: "POST", url: "/" }, response, () => { pasó = true; });
+  assert.equal(pasó, true);
+  pasó = false;
+  await middleware({ method: "GET", url: "/src/main.jsx" }, response, () => { pasó = true; });
+  assert.equal(pasó, true);
+});
 
 async function withDevServer(run) {
   const server = await createServer({
+    root: fileURLToPath(new URL("../", import.meta.url)),
     logLevel: "silent",
     server: { host: "127.0.0.1", port: 0, strictPort: true }
   });
@@ -81,5 +123,15 @@ test("Vite bloquea la carga del frontend en marcos ajenos", async () => {
         respuesta.headers.get("content-security-policy")?.includes("frame-ancestors 'none'")
       );
     }
+  });
+});
+
+test("Los recursos estáticos reciben una CSP restrictiva", async () => {
+  await withDevServer(async (url) => {
+    const respuesta = await fetch(`${url}/sitemap.xml`);
+    assert.equal(respuesta.status, 200);
+    assert.ok(respuesta.headers.get("content-security-policy")?.includes("default-src 'none'"));
+    assert.ok(respuesta.headers.get("content-security-policy")?.includes("form-action 'none'"));
+    assert.equal(respuesta.headers.get("x-content-type-options"), "nosniff");
   });
 });
