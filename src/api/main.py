@@ -39,6 +39,14 @@ app = FastAPI(
     lifespan=cicloVida,
 )
 
+
+@app.middleware("http")
+async def agregarCabecerasSeguridad(request, call_next):
+    respuesta = await call_next(request)
+    respuesta.headers["X-Content-Type-Options"] = "nosniff"
+    return respuesta
+
+
 app.include_router(routerAuth)
 app.include_router(routerUsers)
 app.include_router(routerMessages)
