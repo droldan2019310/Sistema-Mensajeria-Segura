@@ -1,9 +1,12 @@
 .git
 .env
+.env.*
+.sonar-local.env
 .coverage
 coverage.xml
 **/__pycache__/
 **/.pytest_cache/
 src/frontend/node_modules/
 src/frontend/dist/
+/artifacts/
 *.log

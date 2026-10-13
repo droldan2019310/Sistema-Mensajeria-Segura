@@ -43,6 +43,7 @@ def generarTokenRefresh(datos: dict) -> str:
 def decodificarToken(token: str) -> dict:
     return jwt.decode(
         token,
-        options={"verify_signature": False},
+        key=configuracion.JWTClaveSecreta,
         algorithms=[configuracion.JWTAlgoritmo],
+        options={"require": ["exp", "iat", "sub", "type"]},
     )

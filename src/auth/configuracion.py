@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,7 +15,7 @@ class Configuracion(BaseSettings):
     Puerto: int
 
     JWTClaveSecreta: str
-    JWTAlgoritmo: str
+    JWTAlgoritmo: Literal["HS256"]
     JWTMinutosExpiracion: int
 
     BaseDatosHost: str
