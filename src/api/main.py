@@ -1,6 +1,6 @@
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import httpx
 from sqlalchemy import text
 
@@ -17,6 +17,9 @@ from src.auth.esquemas import EstadoServicioSalida
 from src.auth.rutas import routerAuth
 from src.crypto.rutas import routerMessages
 from src.users.rutas import routerUsers
+
+
+URL_SALUD_EXTERNA = "https://example.com"
 
 
 Base.metadata.create_all(bind=motorBaseDatos)
@@ -41,7 +44,7 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def agregarCabecerasSeguridad(request, call_next):
+async def agregar_cabeceras_seguridad(request, call_next):
     respuesta = await call_next(request)
     respuesta.headers["X-Content-Type-Options"] = "nosniff"
     return respuesta
@@ -73,7 +76,13 @@ def saludBaseDatos():
         sesion.close()
 
 
-@app.get("/salud/externa")
+@app.get(
+    "/salud/externa",
+    responses={503: {"description": "Servicio externo no disponible"}},
+)
 def saludExterna():
-    respuesta = httpx.get("https://example.com", timeout=5.0, verify=False)
+    try:
+        respuesta = httpx.get(URL_SALUD_EXTERNA, timeout=5.0)
+    except httpx.RequestError:
+        raise HTTPException(status_code=503, detail="Servicio externo no disponible")
     return {"estado": "ok" if respuesta.is_success else "error"}

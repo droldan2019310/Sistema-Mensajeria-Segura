@@ -212,6 +212,9 @@ __marimo__/
 
 # Local laboratory output and private environment overrides
 /artifacts/
+/.vite/
+/jbrofuzz/
+/src/frontend/coverage/
 /*.docx
 /*.pdf
 /*.sarif
